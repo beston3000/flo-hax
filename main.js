@@ -1,64 +1,67 @@
-(async function injectPersistentMasterBot() {
+(async function injectReactHackerBot() {
     if (document.getElementById('flocab-auto-ui')) {
         console.warn("Flocab Bot is already running!");
         return;
     }
 
-    // --- 1. MODERN UI SETUP ---
+    // --- 1. PREMIUM GLASSMORPHISM UI ---
     const ui = document.createElement('div');
     ui.id = 'flocab-auto-ui';
     ui.style.cssText = `
-        position: fixed; top: 20px; right: 20px; width: 350px; 
-        background: linear-gradient(145deg, #1e1e2e, #181825); 
-        color: #cdd6f4; border: 1px solid #313244; border-radius: 12px; 
+        position: fixed; top: 20px; right: 20px; width: 360px; 
+        background: rgba(17, 17, 27, 0.85); color: #cdd6f4; 
+        border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; 
         z-index: 999999; font-family: 'Segoe UI', system-ui, sans-serif; 
-        font-size: 13px; box-shadow: 0 12px 36px rgba(0,0,0,0.6); 
+        font-size: 13px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
         display: flex; flex-direction: column; overflow: hidden;
-        backdrop-filter: blur(10px);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     `;
 
     const header = document.createElement('div');
     header.innerHTML = `
-        <div style="font-size: 15px; margin-bottom: 2px;">🎓 <b>Flocab Master Bot v8.0</b></div>
-        <div id="flocab-status" style="font-size: 11px; color: #a6adc8; font-weight: normal;">Status: Injecting...</div>
+        <div style="font-size: 16px; margin-bottom: 2px;">🤖 <b>Flocab React-Hacker v9.0</b></div>
+        <div id="flocab-status" style="font-size: 11px; color: #a6adc8; font-weight: normal;">Status: Initializing...</div>
     `;
     header.style.cssText = `
-        background: #11111b; padding: 12px; cursor: move; 
+        background: rgba(255, 255, 255, 0.03); padding: 14px; cursor: move; 
         font-weight: bold; text-align: center; user-select: none;
-        border-bottom: 1px solid #313244;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     `;
     ui.appendChild(header);
 
     const controls = document.createElement('div');
-    controls.style.cssText = 'padding: 12px; display: flex; gap: 10px; border-bottom: 1px solid #313244;';
+    controls.style.cssText = 'padding: 12px; display: flex; gap: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);';
     
     const startBtn = document.createElement('button'); 
-    startBtn.innerText = '▶ START BOT'; 
+    startBtn.innerText = '▶ START AUTO-PILOT'; 
     startBtn.style.cssText = `
-        background: #a6e3a1; color: #11111b; border: none; padding: 8px; 
-        cursor: pointer; border-radius: 6px; flex: 1; font-weight: bold;
-        transition: opacity 0.2s;
+        background: linear-gradient(135deg, #a6e3a1, #94e2d5); color: #11111b; 
+        border: none; padding: 10px; cursor: pointer; border-radius: 8px; 
+        flex: 1; font-weight: 800; font-size: 12px; transition: transform 0.1s, opacity 0.2s;
     `;
-    startBtn.onmouseover = () => startBtn.style.opacity = '0.8';
+    startBtn.onmouseover = () => startBtn.style.opacity = '0.85';
     startBtn.onmouseout = () => startBtn.style.opacity = '1';
+    startBtn.onmousedown = () => startBtn.style.transform = 'scale(0.96)';
+    startBtn.onmouseup = () => startBtn.style.transform = 'scale(1)';
     
     const stopBtn = document.createElement('button'); 
     stopBtn.innerText = '⏹ PAUSE'; 
     stopBtn.style.cssText = `
-        background: #f38ba8; color: #11111b; border: none; padding: 8px; 
-        cursor: pointer; border-radius: 6px; flex: 1; font-weight: bold;
-        transition: opacity 0.2s;
+        background: rgba(243, 139, 168, 0.15); color: #f38ba8; 
+        border: 1px solid rgba(243, 139, 168, 0.4); padding: 10px; 
+        cursor: pointer; border-radius: 8px; flex: 0.5; font-weight: 800; 
+        font-size: 12px; transition: opacity 0.2s;
     `;
-    stopBtn.onmouseover = () => stopBtn.style.opacity = '0.8';
-    stopBtn.onmouseout = () => stopBtn.style.opacity = '1';
+    stopBtn.onmouseover = () => stopBtn.style.background = 'rgba(243, 139, 168, 0.25)';
+    stopBtn.onmouseout = () => stopBtn.style.background = 'rgba(243, 139, 168, 0.15)';
     
     controls.append(startBtn, stopBtn);
     ui.appendChild(controls);
 
     const logArea = document.createElement('div');
     logArea.style.cssText = `
-        height: 200px; overflow-y: auto; padding: 12px; background: #11111b; 
-        word-wrap: break-word; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+        height: 220px; overflow-y: auto; padding: 12px; background: transparent; 
+        word-wrap: break-word; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 11px;
     `;
     ui.appendChild(logArea);
     document.body.appendChild(ui);
@@ -80,81 +83,51 @@
         document.getElementById('flocab-status').innerHTML = `<span style="color:${color}">●</span> ${text}`;
     }
 
-    // --- 2. DATA MANAGEMENT & NETWORK RECOVERY ---
-    let correctIds = new Set();
-    let vocabDictionary = [];
-
-    function processNetworkData(url, data) {
-        try {
-            if (url.includes('read-and-respond-questions') || url.includes('quiz_attempts')) {
-                const list = data.quiz ? data.quiz.questions : data;
-                let added = 0;
-                list.forEach(item => {
-                    const question = item.question || item;
-                    if (question.option_set) {
-                        question.option_set.forEach(opt => {
-                            if (opt.is_correct) { correctIds.add(opt.id.toString()); added++; }
-                        });
-                    }
-                });
-                if (added > 0) log(`[Database] Mapped ${added} exact answer IDs.`, 'success');
-            }
-            
-            if (url.includes('definition')) {
-                const items = Array.isArray(data) ? data : (data.results || []);
-                let tempDict = [];
-                items.forEach(item => {
-                    if (item.term_display) {
-                        tempDict.push({
-                            word: item.term_display.toUpperCase(),
-                            def: item.text,
-                            ex: item.example ? item.example.replace(/_/g, '').replace(/\s+/g, ' ').trim() : ''
-                        });
-                    }
-                });
-                if (tempDict.length > 0) {
-                    vocabDictionary = tempDict;
-                    log(`[Database] Synced ${vocabDictionary.length} vocab words.`, 'success');
-                }
-            }
-        } catch (err) { log(`Parsing error: ${err.message}`, 'error'); }
-    }
-
-    // 2A. Real-time Network Interceptor
-    const originalFetch = window.fetch;
-    window.fetch = async function(...args) {
-        const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url ? args[0].url : '');
-        const response = await originalFetch.apply(this, args);
-        try {
-            if (url.includes('/api/')) {
-                const clone = response.clone();
-                clone.json().then(data => processNetworkData(url, data)).catch(e => {});
-            }
-        } catch(e) {}
-        return response;
-    };
-
-    // 2B. Retrospective Recovery (Finds requests made BEFORE bot injected)
-    async function recoverPastNetworkCalls() {
-        log('Scanning browser history for missed Flocab APIs...', 'debug');
-        const resources = performance.getEntriesByType('resource');
-        const missedUrls = resources.map(r => r.name).filter(n => n.includes('/api/definition') || n.includes('read-and-respond-questions') || n.includes('quiz_attempts'));
+    // --- 2. REACT VIRTUAL-DOM HACKER ENGINE ---
+    // Recursively searches the React Component tree for the hidden "is_correct" flag in memory
+    function extractReactAnswer(domSelector) {
+        const targetNode = document.querySelector(domSelector);
+        if (!targetNode) return null;
         
-        // Remove duplicates
-        const uniqueUrls = [...new Set(missedUrls)];
+        const fiberKey = Object.keys(targetNode).find(k => k.startsWith('__reactFiber$'));
+        if (!fiberKey) return null;
         
-        for (let url of uniqueUrls) {
-            log(`Recovering missed data: ${url.split('/api/')[1].split('?')[0]}`, 'warn');
-            try {
-                const res = await originalFetch(url);
-                const data = await res.json();
-                processNetworkData(url, data);
-            } catch (err) {}
+        let fiber = targetNode[fiberKey];
+        for (let i = 0; i < 25; i++) {
+            if (!fiber) break;
+            if (fiber.memoizedProps) {
+                // Deep scan memory object for correct answer
+                const search = (obj, depth) => {
+                    if (depth > 6 || !obj || typeof obj !== 'object') return null;
+                    if (Array.isArray(obj)) {
+                        for (let item of obj) {
+                            if (item && typeof item === 'object') {
+                                if (item.is_correct === true || item.isCorrect === true || item.correct === true) {
+                                    return item.text || item.term_display || item.word || item.term || item.label || item.id;
+                                }
+                                const r = search(item, depth + 1);
+                                if (r) return r;
+                            }
+                        }
+                    } else {
+                        for (let k in obj) {
+                            if (['children', 'parent', 'owner', 'stateNode', 'dispatch'].includes(k) || k.startsWith('__')) continue;
+                            // Sometimes the answer is stored directly as a prop
+                            if (k === 'correctAnswer' || k === 'correct_answer') return obj[k];
+                            const r = search(obj[k], depth + 1);
+                            if (r) return r;
+                        }
+                    }
+                    return null;
+                };
+                
+                const ans = search(fiber.memoizedProps, 0);
+                if (ans) return ans.toString().toUpperCase();
+            }
+            fiber = fiber.return; // Traverse up the tree
         }
+        return null;
     }
-    
-    // Execute recovery immediately
-    await recoverPastNetworkCalls();
 
     // --- 3. DOM NAVIGATION & BOT LOOP ---
     let isRunning = false;
@@ -168,7 +141,6 @@
         return "Idle";
     }
 
-    // Clicks the sidebar to navigate without reloading the page
     function clickSidebarLink(targetTextArray) {
         const elements = Array.from(document.querySelectorAll('a, button, span, div'));
         const link = elements.find(el => {
@@ -191,8 +163,6 @@
         setStatus(`Running: ${activity}`, '#a6e3a1');
         
         const allButtons = Array.from(document.querySelectorAll('button'));
-        const allElements = Array.from(document.querySelectorAll('button, div, span'));
-        const upperText = document.body.innerText.toUpperCase();
 
         // --- PHASE 1: PRE-GAME & MUSIC ---
         const noMusicBtn = allButtons.find(b => b.innerText.toUpperCase().includes('WITHOUT MUSIC'));
@@ -204,7 +174,7 @@
         }
 
         const startBtn = allButtons.find(b => b.innerText.toUpperCase() === 'START GAME' || b.innerText.toUpperCase() === 'START');
-        if (startBtn && !upperText.includes('WITHOUT MUSIC')) {
+        if (startBtn && !document.body.innerText.toUpperCase().includes('WITHOUT MUSIC')) {
              log('Clicking Start...', 'success');
              startBtn.click();
              loopTimer = setTimeout(runLoop, 2000);
@@ -230,62 +200,44 @@
                     isRunning = false;
                     setStatus('Finished', '#cba6f7');
                 }
-            }, 3000); // Wait 3s for Flocabulary to save the score
+            }, 3000);
             return; 
         }
 
-        // --- PHASE 3: READ & RESPOND / QUIZ ---
-        if (activity === "Read & Respond" || activity === "Quiz") {
-            const radios = document.querySelectorAll('input[type="radio"]');
-            let clickedOption = false;
+        // --- PHASE 3: SOLVE ANY QUESTION ---
+        // This unifies Quiz, R&R, and Vocab using the exact same React memory hacker
+        if (activity !== "Idle") {
+            // Target elements that usually house the current React state
+            const targetWordOrId = extractReactAnswer('[data-testid="question-option-draggable"]') || extractReactAnswer('.optionWrapper') || extractReactAnswer('.rnr-button-next');
             
-            radios.forEach(radio => {
-                if (correctIds.has(radio.value)) {
-                    if (!radio.checked) radio.click();
-                    clickedOption = true;
-                }
-            });
+            if (targetWordOrId) {
+                log(`[React Hacker] Extracted correct answer: ${targetWordOrId}`, 'debug');
 
-            const actionBtn = document.querySelector('.rnr-button-next') || allButtons.find(b => ['NEXT', 'NEXT QUESTION', 'CONFIRM ANSWER'].includes(b.innerText.trim().toUpperCase()));
-            if (actionBtn) {
-                const text = actionBtn.innerText.trim().toUpperCase();
-                if (text === 'CONFIRM ANSWER' && clickedOption) {
-                    setTimeout(() => { if(isRunning) actionBtn.click(); }, 300);
-                } else if (text !== 'CONFIRM ANSWER') {
-                    actionBtn.click();
-                }
-            }
-        } 
-        
-        // --- PHASE 4: VOCAB GAME ---
-        else if (activity === "Vocab Game") {
-            const pageText = document.body.innerText.replace(/\s+/g, ' ');
-            let targetWord = null;
-
-            for (let v of vocabDictionary) {
-                if (pageText.includes(v.def) || (v.ex && pageText.includes(v.ex))) {
-                    targetWord = v.word; break;
-                }
-            }
-
-            if (targetWord) {
-                // Find vocab circle (strictly matching text length to avoid clicking big container divs)
-                const vocabCircle = allElements.find(el => {
-                    const txt = el.innerText.trim().toUpperCase();
-                    return txt === targetWord && txt.length === targetWord.length;
+                // Try to find the button that has this text or value
+                const clickableOptions = Array.from(document.querySelectorAll('button, input[type="radio"], .optionWrapper'));
+                let correctElement = clickableOptions.find(el => {
+                    const txt = el.innerText ? el.innerText.trim().toUpperCase() : '';
+                    const val = el.value ? el.value.toUpperCase() : '';
+                    return txt === targetWordOrId || val === targetWordOrId;
                 });
 
-                if (vocabCircle) {
-                    vocabCircle.click();
+                if (correctElement) {
+                    log(`Found matching option! Clicking...`, 'success');
+                    correctElement.click();
+
+                    // Instantly hunt for the confirm/next button
                     setTimeout(() => {
-                        const next = Array.from(document.querySelectorAll('button')).find(b => ['NEXT', 'CONTINUE'].includes(b.innerText.trim().toUpperCase()));
-                        if (next) next.click();
-                    }, 400);
+                        const actionBtn = document.querySelector('.rnr-button-next') || Array.from(document.querySelectorAll('button')).find(b => ['NEXT', 'CONTINUE', 'CONFIRM ANSWER'].includes(b.innerText.trim().toUpperCase()));
+                        if (actionBtn) {
+                            actionBtn.click();
+                            log(`Moving to next question.`, 'info');
+                        }
+                    }, 350);
                 }
             } else {
-                // Hit Next if stuck on a transition screen
-                const next = allButtons.find(b => ['NEXT', 'CONTINUE'].includes(b.innerText.trim().toUpperCase()));
-                if (next) next.click();
+                // If it can't find a question, check if it's stuck on a transition screen
+                const actionBtn = Array.from(document.querySelectorAll('button')).find(b => ['NEXT', 'CONTINUE'].includes(b.innerText.trim().toUpperCase()));
+                if (actionBtn) actionBtn.click();
             }
         }
 
@@ -309,6 +261,6 @@
     });
 
     setStatus('Ready', '#89b4fa');
-    log('UI Injected. Ready to dominate.', 'info');
+    log('React Hook Installed. Ready to Hack.', 'info');
 
 })();
