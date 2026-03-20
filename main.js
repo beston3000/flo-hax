@@ -1,15 +1,15 @@
-(async function injectReactHackerBot() {
+(async function injectReactHackerBotV10() {
     if (document.getElementById('flocab-auto-ui')) {
         console.warn("Flocab Bot is already running!");
         return;
     }
 
-    // --- 1. PREMIUM GLASSMORPHISM UI ---
+    // --- 1. UI SETUP ---
     const ui = document.createElement('div');
     ui.id = 'flocab-auto-ui';
     ui.style.cssText = `
         position: fixed; top: 20px; right: 20px; width: 360px; 
-        background: rgba(17, 17, 27, 0.85); color: #cdd6f4; 
+        background: rgba(17, 17, 27, 0.9); color: #cdd6f4; 
         border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; 
         z-index: 999999; font-family: 'Segoe UI', system-ui, sans-serif; 
         font-size: 13px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
@@ -19,7 +19,7 @@
 
     const header = document.createElement('div');
     header.innerHTML = `
-        <div style="font-size: 16px; margin-bottom: 2px;">🤖 <b>Flocab React-Hacker v9.0</b></div>
+        <div style="font-size: 16px; margin-bottom: 2px;">🤖 <b>Flocab Master v10.0</b></div>
         <div id="flocab-status" style="font-size: 11px; color: #a6adc8; font-weight: normal;">Status: Initializing...</div>
     `;
     header.style.cssText = `
@@ -41,8 +41,6 @@
     `;
     startBtn.onmouseover = () => startBtn.style.opacity = '0.85';
     startBtn.onmouseout = () => startBtn.style.opacity = '1';
-    startBtn.onmousedown = () => startBtn.style.transform = 'scale(0.96)';
-    startBtn.onmouseup = () => startBtn.style.transform = 'scale(1)';
     
     const stopBtn = document.createElement('button'); 
     stopBtn.innerText = '⏹ PAUSE'; 
@@ -84,7 +82,6 @@
     }
 
     // --- 2. REACT VIRTUAL-DOM HACKER ENGINE ---
-    // Recursively searches the React Component tree for the hidden "is_correct" flag in memory
     function extractReactAnswer(domSelector) {
         const targetNode = document.querySelector(domSelector);
         if (!targetNode) return null;
@@ -96,7 +93,6 @@
         for (let i = 0; i < 25; i++) {
             if (!fiber) break;
             if (fiber.memoizedProps) {
-                // Deep scan memory object for correct answer
                 const search = (obj, depth) => {
                     if (depth > 6 || !obj || typeof obj !== 'object') return null;
                     if (Array.isArray(obj)) {
@@ -112,7 +108,6 @@
                     } else {
                         for (let k in obj) {
                             if (['children', 'parent', 'owner', 'stateNode', 'dispatch'].includes(k) || k.startsWith('__')) continue;
-                            // Sometimes the answer is stored directly as a prop
                             if (k === 'correctAnswer' || k === 'correct_answer') return obj[k];
                             const r = search(obj[k], depth + 1);
                             if (r) return r;
@@ -124,7 +119,7 @@
                 const ans = search(fiber.memoizedProps, 0);
                 if (ans) return ans.toString().toUpperCase();
             }
-            fiber = fiber.return; // Traverse up the tree
+            fiber = fiber.return; 
         }
         return null;
     }
@@ -148,11 +143,7 @@
             const text = el.innerText.trim().toUpperCase();
             return targetTextArray.includes(text) && (el.tagName === 'A' || el.tagName === 'BUTTON' || window.getComputedStyle(el).cursor === 'pointer');
         });
-        
-        if (link) {
-            link.click();
-            return true;
-        }
+        if (link) { link.click(); return true; }
         return false;
     }
 
@@ -161,10 +152,9 @@
 
         const activity = detectActivity();
         setStatus(`Running: ${activity}`, '#a6e3a1');
-        
         const allButtons = Array.from(document.querySelectorAll('button'));
 
-        // --- PHASE 1: PRE-GAME & MUSIC ---
+        // --- PRE-GAME / FINISH HANDLERS ---
         const noMusicBtn = allButtons.find(b => b.innerText.toUpperCase().includes('WITHOUT MUSIC'));
         if (noMusicBtn) {
             log('Muting music...', 'success');
@@ -181,61 +171,55 @@
              return;
         }
 
-        // --- PHASE 2: AUTO-NAVIGATION ON FINISH ---
         const finishBtn = allButtons.find(b => ['SUBMIT', 'SUBMIT ASSIGNMENT', 'FINISH'].includes(b.innerText.trim().toUpperCase()));
         if (finishBtn) {
             log('Activity Complete! Submitting...', 'nav');
             finishBtn.click();
-            
             setTimeout(() => {
                 if (!isRunning) return;
                 log('Navigating to next section via Sidebar...', 'nav');
-                
-                if (activity === "Vocab Game") {
-                    clickSidebarLink(['READ & RESPOND', 'READ AND RESPOND']);
-                } else if (activity === "Read & Respond") {
-                    clickSidebarLink(['QUIZ']);
-                } else if (activity === "Quiz") {
+                if (activity === "Vocab Game") clickSidebarLink(['READ & RESPOND', 'READ AND RESPOND']);
+                else if (activity === "Read & Respond") clickSidebarLink(['QUIZ']);
+                else if (activity === "Quiz") {
                     log('🎉 Unit Complete! Bot pausing.', 'success');
-                    isRunning = false;
-                    setStatus('Finished', '#cba6f7');
+                    isRunning = false; setStatus('Finished', '#cba6f7');
                 }
             }, 3000);
             return; 
         }
 
-        // --- PHASE 3: SOLVE ANY QUESTION ---
-        // This unifies Quiz, R&R, and Vocab using the exact same React memory hacker
+        // --- SOLVE QUESTION ---
         if (activity !== "Idle") {
-            // Target elements that usually house the current React state
-            const targetWordOrId = extractReactAnswer('[data-testid="question-option-draggable"]') || extractReactAnswer('.optionWrapper') || extractReactAnswer('.rnr-button-next');
+            // NEW: Added '.option' to explicitly target the Vocab Game elements for the memory hack
+            const targetWordOrId = extractReactAnswer('button.option') || extractReactAnswer('.option') || extractReactAnswer('[data-testid="question-option-draggable"]') || extractReactAnswer('.optionWrapper') || extractReactAnswer('.rnr-button-next');
             
             if (targetWordOrId) {
-                log(`[React Hacker] Extracted correct answer: ${targetWordOrId}`, 'debug');
+                log(`[Memory Hack] Correct answer is: ${targetWordOrId}`, 'debug');
 
-                // Try to find the button that has this text or value
-                const clickableOptions = Array.from(document.querySelectorAll('button, input[type="radio"], .optionWrapper'));
+                // NEW: Highly aggressive button targeting including aria-labels and internal <p> tags
+                const clickableOptions = Array.from(document.querySelectorAll('button.option, button, input[type="radio"], .optionWrapper'));
                 let correctElement = clickableOptions.find(el => {
                     const txt = el.innerText ? el.innerText.trim().toUpperCase() : '';
                     const val = el.value ? el.value.toUpperCase() : '';
-                    return txt === targetWordOrId || val === targetWordOrId;
+                    const aria = el.getAttribute('aria-label') ? el.getAttribute('aria-label').toUpperCase() : '';
+                    
+                    return txt === targetWordOrId || val === targetWordOrId || aria.includes(targetWordOrId);
                 });
 
                 if (correctElement) {
-                    log(`Found matching option! Clicking...`, 'success');
+                    log(`Target acquired. Clicking element...`, 'success');
                     correctElement.click();
 
-                    // Instantly hunt for the confirm/next button
                     setTimeout(() => {
                         const actionBtn = document.querySelector('.rnr-button-next') || Array.from(document.querySelectorAll('button')).find(b => ['NEXT', 'CONTINUE', 'CONFIRM ANSWER'].includes(b.innerText.trim().toUpperCase()));
                         if (actionBtn) {
                             actionBtn.click();
-                            log(`Moving to next question.`, 'info');
+                            log(`Advancing to next screen.`, 'info');
                         }
-                    }, 350);
+                    }, 400);
                 }
             } else {
-                // If it can't find a question, check if it's stuck on a transition screen
+                // Click next/continue if stuck on transition
                 const actionBtn = Array.from(document.querySelectorAll('button')).find(b => ['NEXT', 'CONTINUE'].includes(b.innerText.trim().toUpperCase()));
                 if (actionBtn) actionBtn.click();
             }
@@ -244,7 +228,7 @@
         loopTimer = setTimeout(runLoop, 1500);
     }
 
-    // --- 4. BUTTON LISTENERS ---
+    // --- 4. LISTENERS ---
     startBtn.addEventListener('click', () => {
         if (isRunning) return;
         isRunning = true;
@@ -261,6 +245,6 @@
     });
 
     setStatus('Ready', '#89b4fa');
-    log('React Hook Installed. Ready to Hack.', 'info');
+    log('V10 Initialized. Ready to hunt.', 'info');
 
 })();
