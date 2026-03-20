@@ -1,4 +1,4 @@
-(async function injectReactHackerBotV10() {
+(async function injectSimpleMasterBotV11() {
     if (document.getElementById('flocab-auto-ui')) {
         console.warn("Flocab Bot is already running!");
         return;
@@ -9,21 +9,20 @@
     ui.id = 'flocab-auto-ui';
     ui.style.cssText = `
         position: fixed; top: 20px; right: 20px; width: 360px; 
-        background: rgba(17, 17, 27, 0.9); color: #cdd6f4; 
-        border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; 
+        background: rgba(17, 17, 27, 0.95); color: #cdd6f4; 
+        border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; 
         z-index: 999999; font-family: 'Segoe UI', system-ui, sans-serif; 
-        font-size: 13px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
+        font-size: 13px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); 
         display: flex; flex-direction: column; overflow: hidden;
-        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     `;
 
     const header = document.createElement('div');
     header.innerHTML = `
-        <div style="font-size: 16px; margin-bottom: 2px;">🤖 <b>Flocab Master v10.0</b></div>
-        <div id="flocab-status" style="font-size: 11px; color: #a6adc8; font-weight: normal;">Status: Initializing...</div>
+        <div style="font-size: 16px; margin-bottom: 2px;">🤖 <b>Flocab Master v11.0</b></div>
+        <div id="flocab-status" style="font-size: 11px; color: #a6adc8;">Status: Initializing (Simple Mode)...</div>
     `;
     header.style.cssText = `
-        background: rgba(255, 255, 255, 0.03); padding: 14px; cursor: move; 
+        background: rgba(255, 255, 255, 0.05); padding: 12px; cursor: move; 
         font-weight: bold; text-align: center; user-select: none;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     `;
@@ -33,32 +32,25 @@
     controls.style.cssText = 'padding: 12px; display: flex; gap: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);';
     
     const startBtn = document.createElement('button'); 
-    startBtn.innerText = '▶ START AUTO-PILOT'; 
+    startBtn.innerText = '▶ START BOT'; 
     startBtn.style.cssText = `
-        background: linear-gradient(135deg, #a6e3a1, #94e2d5); color: #11111b; 
-        border: none; padding: 10px; cursor: pointer; border-radius: 8px; 
-        flex: 1; font-weight: 800; font-size: 12px; transition: transform 0.1s, opacity 0.2s;
+        background: #a6e3a1; color: #11111b; border: none; padding: 10px; 
+        cursor: pointer; border-radius: 8px; flex: 1; font-weight: 800;
     `;
-    startBtn.onmouseover = () => startBtn.style.opacity = '0.85';
-    startBtn.onmouseout = () => startBtn.style.opacity = '1';
     
     const stopBtn = document.createElement('button'); 
     stopBtn.innerText = '⏹ PAUSE'; 
     stopBtn.style.cssText = `
-        background: rgba(243, 139, 168, 0.15); color: #f38ba8; 
-        border: 1px solid rgba(243, 139, 168, 0.4); padding: 10px; 
-        cursor: pointer; border-radius: 8px; flex: 0.5; font-weight: 800; 
-        font-size: 12px; transition: opacity 0.2s;
+        background: #f38ba8; color: #11111b; border: none; padding: 10px; 
+        cursor: pointer; border-radius: 8px; flex: 0.5; font-weight: 800;
     `;
-    stopBtn.onmouseover = () => stopBtn.style.background = 'rgba(243, 139, 168, 0.25)';
-    stopBtn.onmouseout = () => stopBtn.style.background = 'rgba(243, 139, 168, 0.15)';
     
     controls.append(startBtn, stopBtn);
     ui.appendChild(controls);
 
     const logArea = document.createElement('div');
     logArea.style.cssText = `
-        height: 220px; overflow-y: auto; padding: 12px; background: transparent; 
+        height: 200px; overflow-y: auto; padding: 12px; background: transparent; 
         word-wrap: break-word; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 11px;
     `;
     ui.appendChild(logArea);
@@ -71,7 +63,7 @@
     document.addEventListener('mouseup', () => isDragging = false);
 
     function log(msg, type = 'info') {
-        const colors = { info: '#bac2de', success: '#a6e3a1', warn: '#f9e2af', error: '#f38ba8', nav: '#cba6f7', debug: '#6c7086' };
+        const colors = { info: '#bac2de', success: '#a6e3a1', warn: '#f9e2af', error: '#f38ba8', nav: '#cba6f7' };
         const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "numeric", minute: "numeric", second: "numeric" });
         logArea.innerHTML += `<div style="margin-bottom: 6px;"><span style="color:#585b70">[${time}]</span> <span style="color:${colors[type]}">${msg}</span></div>`;
         logArea.scrollTop = logArea.scrollHeight; 
@@ -81,48 +73,78 @@
         document.getElementById('flocab-status').innerHTML = `<span style="color:${color}">●</span> ${text}`;
     }
 
-    // --- 2. REACT VIRTUAL-DOM HACKER ENGINE ---
-    function extractReactAnswer(domSelector) {
-        const targetNode = document.querySelector(domSelector);
-        if (!targetNode) return null;
-        
-        const fiberKey = Object.keys(targetNode).find(k => k.startsWith('__reactFiber$'));
-        if (!fiberKey) return null;
-        
-        let fiber = targetNode[fiberKey];
-        for (let i = 0; i < 25; i++) {
-            if (!fiber) break;
-            if (fiber.memoizedProps) {
-                const search = (obj, depth) => {
-                    if (depth > 6 || !obj || typeof obj !== 'object') return null;
-                    if (Array.isArray(obj)) {
-                        for (let item of obj) {
-                            if (item && typeof item === 'object') {
-                                if (item.is_correct === true || item.isCorrect === true || item.correct === true) {
-                                    return item.text || item.term_display || item.word || item.term || item.label || item.id;
-                                }
-                                const r = search(item, depth + 1);
-                                if (r) return r;
-                            }
-                        }
-                    } else {
-                        for (let k in obj) {
-                            if (['children', 'parent', 'owner', 'stateNode', 'dispatch'].includes(k) || k.startsWith('__')) continue;
-                            if (k === 'correctAnswer' || k === 'correct_answer') return obj[k];
-                            const r = search(obj[k], depth + 1);
-                            if (r) return r;
-                        }
+    // --- 2. NETWORK INTERCEPTOR (Safe & Clean) ---
+    let correctIds = new Set();
+    let vocabDictionary = [];
+
+    function processNetworkData(url, data) {
+        try {
+            // Read & Respond / Quiz Answer IDs
+            if (url.includes('read-and-respond-questions') || url.includes('quiz_attempts')) {
+                const list = data.quiz ? data.quiz.questions : data;
+                let added = 0;
+                list.forEach(item => {
+                    const question = item.question || item;
+                    if (question.option_set) {
+                        question.option_set.forEach(opt => {
+                            if (opt.is_correct) { correctIds.add(opt.id.toString()); added++; }
+                        });
                     }
-                    return null;
-                };
-                
-                const ans = search(fiber.memoizedProps, 0);
-                if (ans) return ans.toString().toUpperCase();
+                });
+                if (added > 0) log(`[Database] Mapped ${added} precise answer IDs.`, 'success');
             }
-            fiber = fiber.return; 
-        }
-        return null;
+            
+            // Vocab Game Words & Definitions
+            if (url.includes('definition')) {
+                const items = Array.isArray(data) ? data : (data.results || []);
+                let tempDict = [];
+                items.forEach(item => {
+                    if (item.term_display) {
+                        tempDict.push({
+                            word: item.term_display.toUpperCase(),
+                            // Clean up text format for easier matching later
+                            def: item.text.replace(/\s+/g, ' ').trim(),
+                            ex: item.example ? item.example.replace(/_/g, '').replace(/\s+/g, ' ').trim() : ''
+                        });
+                    }
+                });
+                if (tempDict.length > 0) {
+                    vocabDictionary = tempDict;
+                    log(`[Database] Synced ${vocabDictionary.length} vocab words.`, 'success');
+                }
+            }
+        } catch (err) { log(`Network parse error: ${err.message}`, 'error'); }
     }
+
+    // Fetch Interceptor
+    const originalFetch = window.fetch;
+    window.fetch = async function(...args) {
+        const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url ? args[0].url : '');
+        const response = await originalFetch.apply(this, args);
+        try {
+            if (url.includes('/api/')) {
+                const clone = response.clone();
+                clone.json().then(data => processNetworkData(url, data)).catch(e => {});
+            }
+        } catch(e) {}
+        return response;
+    };
+
+    // Recover Missed Network Calls
+    async function recoverPastNetworkCalls() {
+        const resources = performance.getEntriesByType('resource');
+        const missedUrls = resources.map(r => r.name).filter(n => n.includes('/api/definition') || n.includes('read-and-respond-questions') || n.includes('quiz_attempts'));
+        const uniqueUrls = [...new Set(missedUrls)];
+        
+        for (let url of uniqueUrls) {
+            try {
+                const res = await originalFetch(url);
+                const data = await res.json();
+                processNetworkData(url, data);
+            } catch (err) {}
+        }
+    }
+    await recoverPastNetworkCalls();
 
     // --- 3. DOM NAVIGATION & BOT LOOP ---
     let isRunning = false;
@@ -138,11 +160,7 @@
 
     function clickSidebarLink(targetTextArray) {
         const elements = Array.from(document.querySelectorAll('a, button, span, div'));
-        const link = elements.find(el => {
-            if (!el.innerText) return false;
-            const text = el.innerText.trim().toUpperCase();
-            return targetTextArray.includes(text) && (el.tagName === 'A' || el.tagName === 'BUTTON' || window.getComputedStyle(el).cursor === 'pointer');
-        });
+        const link = elements.find(el => el.innerText && targetTextArray.includes(el.innerText.trim().toUpperCase()) && (el.tagName === 'A' || el.tagName === 'BUTTON' || window.getComputedStyle(el).cursor === 'pointer'));
         if (link) { link.click(); return true; }
         return false;
     }
@@ -152,9 +170,10 @@
 
         const activity = detectActivity();
         setStatus(`Running: ${activity}`, '#a6e3a1');
+        
         const allButtons = Array.from(document.querySelectorAll('button'));
 
-        // --- PRE-GAME / FINISH HANDLERS ---
+        // --- PHASE 1: PRE-GAME & FINISH LOGIC ---
         const noMusicBtn = allButtons.find(b => b.innerText.toUpperCase().includes('WITHOUT MUSIC'));
         if (noMusicBtn) {
             log('Muting music...', 'success');
@@ -177,58 +196,71 @@
             finishBtn.click();
             setTimeout(() => {
                 if (!isRunning) return;
-                log('Navigating to next section via Sidebar...', 'nav');
+                log('Navigating via Sidebar...', 'nav');
                 if (activity === "Vocab Game") clickSidebarLink(['READ & RESPOND', 'READ AND RESPOND']);
                 else if (activity === "Read & Respond") clickSidebarLink(['QUIZ']);
-                else if (activity === "Quiz") {
-                    log('🎉 Unit Complete! Bot pausing.', 'success');
-                    isRunning = false; setStatus('Finished', '#cba6f7');
-                }
+                else if (activity === "Quiz") { log('🎉 Unit Complete!', 'success'); isRunning = false; setStatus('Finished', '#cba6f7'); }
             }, 3000);
             return; 
         }
 
-        // --- SOLVE QUESTION ---
-        if (activity !== "Idle") {
-            // NEW: Added '.option' to explicitly target the Vocab Game elements for the memory hack
-            const targetWordOrId = extractReactAnswer('button.option') || extractReactAnswer('.option') || extractReactAnswer('[data-testid="question-option-draggable"]') || extractReactAnswer('.optionWrapper') || extractReactAnswer('.rnr-button-next');
+        // --- PHASE 2: QUIZ / READ AND RESPOND ---
+        if (activity === "Read & Respond" || activity === "Quiz") {
+            const radios = document.querySelectorAll('input[type="radio"]');
+            let clickedOption = false;
             
-            if (targetWordOrId) {
-                log(`[Memory Hack] Correct answer is: ${targetWordOrId}`, 'debug');
-
-                // NEW: Highly aggressive button targeting including aria-labels and internal <p> tags
-                const clickableOptions = Array.from(document.querySelectorAll('button.option, button, input[type="radio"], .optionWrapper'));
-                let correctElement = clickableOptions.find(el => {
-                    const txt = el.innerText ? el.innerText.trim().toUpperCase() : '';
-                    const val = el.value ? el.value.toUpperCase() : '';
-                    const aria = el.getAttribute('aria-label') ? el.getAttribute('aria-label').toUpperCase() : '';
-                    
-                    return txt === targetWordOrId || val === targetWordOrId || aria.includes(targetWordOrId);
-                });
-
-                if (correctElement) {
-                    log(`Target acquired. Clicking element...`, 'success');
-                    correctElement.click();
-
-                    setTimeout(() => {
-                        const actionBtn = document.querySelector('.rnr-button-next') || Array.from(document.querySelectorAll('button')).find(b => ['NEXT', 'CONTINUE', 'CONFIRM ANSWER'].includes(b.innerText.trim().toUpperCase()));
-                        if (actionBtn) {
-                            actionBtn.click();
-                            log(`Advancing to next screen.`, 'info');
-                        }
-                    }, 400);
+            radios.forEach(radio => {
+                if (correctIds.has(radio.value)) {
+                    if (!radio.checked) radio.click();
+                    clickedOption = true;
                 }
-            } else {
-                // Click next/continue if stuck on transition
-                const actionBtn = Array.from(document.querySelectorAll('button')).find(b => ['NEXT', 'CONTINUE'].includes(b.innerText.trim().toUpperCase()));
-                if (actionBtn) actionBtn.click();
+            });
+
+            const actionBtn = document.querySelector('.rnr-button-next') || allButtons.find(b => ['NEXT', 'NEXT QUESTION', 'CONFIRM ANSWER'].includes(b.innerText.trim().toUpperCase()));
+            if (actionBtn) {
+                if (actionBtn.innerText.trim().toUpperCase() === 'CONFIRM ANSWER' && clickedOption) {
+                    setTimeout(() => { if(isRunning) actionBtn.click(); }, 300);
+                } else if (actionBtn.innerText.trim().toUpperCase() !== 'CONFIRM ANSWER') {
+                    actionBtn.click();
+                }
+            }
+        } 
+        
+        // --- PHASE 3: VOCAB GAME (Pure Text Matching) ---
+        else if (activity === "Vocab Game") {
+            // Clean the screen text to make matching reliable
+            const screenText = document.body.innerText.replace(/\s+/g, ' ');
+            let targetWord = null;
+
+            // Step A: Read HTML and match definition
+            for (let vocab of vocabDictionary) {
+                if (screenText.includes(vocab.def) || (vocab.ex && screenText.includes(vocab.ex))) {
+                    targetWord = vocab.word;
+                    break;
+                }
+            }
+
+            // Step B: Search buttons for the target word
+            if (targetWord) {
+                const correctButton = allButtons.find(b => b.innerText.trim().toUpperCase() === targetWord);
+                
+                if (correctButton) {
+                    log(`Found target word: ${targetWord}`, 'success');
+                    correctButton.click();
+                }
+            } 
+            
+            // Step C: Click Continue/Next if on a transition screen
+            const continueBtn = allButtons.find(b => ['NEXT', 'CONTINUE'].includes(b.innerText.trim().toUpperCase()));
+            if (continueBtn) {
+                continueBtn.click();
             }
         }
 
         loopTimer = setTimeout(runLoop, 1500);
     }
 
-    // --- 4. LISTENERS ---
+    // --- 4. BUTTON LISTENERS ---
     startBtn.addEventListener('click', () => {
         if (isRunning) return;
         isRunning = true;
@@ -245,6 +277,6 @@
     });
 
     setStatus('Ready', '#89b4fa');
-    log('V10 Initialized. Ready to hunt.', 'info');
+    log('V11 Initialized. Using Pure Text Matcher.', 'info');
 
 })();
